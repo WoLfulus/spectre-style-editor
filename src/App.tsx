@@ -754,7 +754,6 @@ export default function App() {
           {'        --flag                                        '}A flag option{'\n'}
           {'        --optional-option '}<TermSpan path="Options.OptionalOptionValue">[VALUE]</TermSpan>{'    '}<TermSpan path="Options.DefaultValue">default value</TermSpan>{'    '}An optional option{'\n'}
           {'        --required-option '}<TermSpan path="Options.RequiredOptionValue">&lt;VALUE&gt;</TermSpan>{'    '}<TermSpan path="Options.DefaultValue">default value</TermSpan>{'    '}A required option. Required{'\n'}
-          {'        --storage '}<TermSpan path="Options.OptionalOptionValue">[STORAGE]</TermSpan>{'          '}<TermSpan path="Options.DefaultValue">default value</TermSpan>{'    '}The storage to use for the updates{'\n'}
           {'\n'}
           <TermSpan path="Commands.Header">COMMANDS:</TermSpan>{'\n'}
           {'    '}<TermSpan path="Commands.ChildCommand">command</TermSpan>{'    '}A sub command{'\n'}
