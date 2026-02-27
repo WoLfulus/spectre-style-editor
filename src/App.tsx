@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type CSSProperties, type MouseEvent as ReactMouseEvent, type ReactNode } from 'react';
 
 // Selected palette including standard colors and specific ones from your example
 const rawColors = {
@@ -296,13 +296,13 @@ const rawColors = {
 };
 
 // Helper to convert hex to HSL for sorting
-const hexToHsl = (hex) => {
+const hexToHsl = (hex: string) => {
   let r = parseInt(hex.substring(1, 3), 16) / 255;
   let g = parseInt(hex.substring(3, 5), 16) / 255;
   let b = parseInt(hex.substring(5, 7), 16) / 255;
 
   let max = Math.max(r, g, b), min = Math.min(r, g, b);
-  let h, s, l = (max + min) / 2;
+  let h = 0, s = 0, l = (max + min) / 2;
 
   if (max === min) {
     h = s = 0; // achromatic
@@ -334,7 +334,13 @@ const sortedColors = Object.entries(rawColors)
     return a.l - b.l;
   });
 
-const parseStyleString = (styleStr) => {
+type StyleProps = {
+  bold: boolean; italic: boolean; underline: boolean;
+  dim: boolean; invert: boolean; strikethrough: boolean;
+  slowblink: boolean; rapidblink: boolean; color: string;
+};
+
+const parseStyleString = (styleStr: string): StyleProps => {
   const parts = styleStr.split(' ');
   const result = { 
     bold: false, italic: false, underline: false, 
@@ -358,7 +364,7 @@ const parseStyleString = (styleStr) => {
   return result;
 };
 
-const buildStyleString = (styleObj) => {
+const buildStyleString = (styleObj: StyleProps) => {
   const parts = [];
   if (styleObj.bold) parts.push('bold');
   if (styleObj.italic) parts.push('italic');
@@ -372,8 +378,15 @@ const buildStyleString = (styleObj) => {
   return parts.join(' ');
 };
 
+type ActiveEditor = {
+  primaryKey: string;
+  keys: string[];
+  top: number;
+  left: number;
+};
+
 export default function App() {
-  const [styles, setStyles] = useState({
+  const [styles, setStyles] = useState<Record<string, string>>({
     "Usage.Header": "bold gray39",
     "Usage.CurrentCommand": "bold gray42",
     "Usage.RequiredArgument": "bold gray46",
@@ -402,16 +415,16 @@ export default function App() {
     "Commands.RequiredArgument": "bold gray66"
   });
 
-  const [activeEditor, setActiveEditor] = useState(null);
+  const [activeEditor, setActiveEditor] = useState<ActiveEditor | null>(null);
   const [copied, setCopied] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [importText, setImportText] = useState("");
-  const editorRef = useRef(null);
+  const editorRef = useRef<HTMLDivElement>(null);
 
   // Close editor on outside click
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (editorRef.current && !editorRef.current.contains(event.target)) {
+    const handleClickOutside = (event: Event) => {
+      if (editorRef.current && !editorRef.current.contains(event.target as Node)) {
         setActiveEditor(null);
       }
     };
@@ -419,9 +432,9 @@ export default function App() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const openEditor = (e, path) => {
+  const openEditor = (e: ReactMouseEvent<HTMLElement>, path: string) => {
     e.stopPropagation();
-    const rect = e.target.getBoundingClientRect();
+    const rect = (e.target as HTMLElement).getBoundingClientRect();
     
     // Ensure the popover doesn't overflow the screen
     let top = rect.bottom + window.scrollY + 8;
@@ -436,14 +449,14 @@ export default function App() {
     setActiveEditor({ primaryKey: path, keys: keysToEdit, top, left });
   };
 
-  const updateStyle = (updates) => {
+  const updateStyle = (updates: Partial<StyleProps>) => {
     setStyles(prev => {
-      const currentParsed = parseStyleString(prev[activeEditor.primaryKey]);
+      const currentParsed = parseStyleString(prev[activeEditor!.primaryKey]);
       const nextParsed = { ...currentParsed, ...updates };
       const newStyleString = buildStyleString(nextParsed);
       
       const nextStyles = { ...prev };
-      activeEditor.keys.forEach(k => {
+      activeEditor!.keys.forEach(k => {
         nextStyles[k] = newStyleString;
       });
       return nextStyles;
@@ -545,31 +558,33 @@ export default function App() {
     setImportText("");
   };
 
-  const getCss = (key) => {
+  const getCss = (key: string): CSSProperties => {
     const parsed = parseStyleString(styles[key]);
-    const hex = rawColors[parsed.color] || '#ffffff';
+    const hex = (rawColors as Record<string, string>)[parsed.color] || '#ffffff';
     
     const textDecoration = [];
     if (parsed.underline) textDecoration.push('underline');
     if (parsed.strikethrough) textDecoration.push('line-through');
 
-    const css = {
+    const animation = parsed.slowblink
+      ? 'spectre-blink 1s step-end infinite'
+      : parsed.rapidblink
+        ? 'spectre-blink 0.3s step-end infinite'
+        : undefined;
+
+    return {
       color: parsed.invert ? '#0c0c0c' : hex,
       backgroundColor: parsed.invert ? hex : 'transparent',
       fontWeight: parsed.bold ? 'bold' : 'normal',
       fontStyle: parsed.italic ? 'italic' : 'normal',
       textDecoration: textDecoration.length > 0 ? textDecoration.join(' ') : 'none',
       opacity: parsed.dim ? 0.5 : 1,
+      animation,
     };
-
-    if (parsed.slowblink) css.animation = 'spectre-blink 1s step-end infinite';
-    if (parsed.rapidblink) css.animation = 'spectre-blink 0.3s step-end infinite';
-
-    return css;
   };
 
   // Components for layout
-  const TermSpan = ({ path, children }) => {
+  const TermSpan = ({ path, children }: { path: string; children: ReactNode }) => {
     const isActive = activeEditor?.keys?.includes(path);
     return (
       <span 
@@ -587,7 +602,7 @@ export default function App() {
     );
   };
 
-  const CodeString = ({ path }) => {
+  const CodeString = ({ path }: { path: string }) => {
     const isActive = activeEditor?.keys?.includes(path);
     return (
       <span 
@@ -604,8 +619,8 @@ export default function App() {
     );
   };
 
-  const StyleToggle = ({ prop, label, customClass = "" }) => {
-    const isActive = parseStyleString(styles[activeEditor.primaryKey])[prop];
+  const StyleToggle = ({ prop, label, customClass = "" }: { prop: string; label: string; customClass?: string }) => {
+    const isActive = (parseStyleString(styles[activeEditor!.primaryKey]) as Record<string, unknown>)[prop];
     return (
       <button 
         className={`py-1.5 text-xs rounded transition-colors ${customClass} ${isActive ? 'bg-blue-600 text-white shadow-inner' : 'bg-[#333] text-gray-300 hover:bg-[#444]'}`}
@@ -798,5 +813,3 @@ export default function App() {
     </div>
   );
 }
-
-export default App
