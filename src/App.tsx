@@ -589,10 +589,10 @@ export default function App() {
     return (
       <span 
         style={getCss(path)}
-        className={`cursor-pointer transition-colors ${
+        className={`cursor-pointer transition-colors hover:bg-white/10 ${
           isActive 
-            ? 'outline outline-1 outline-blue-500' 
-            : 'hover:bg-white/10'
+            ? 'rounded outline outline-1 outline-blue-500' 
+            : ''
         }`}
         onClick={(e) => openEditor(e, path)}
         title="Click to edit, Ctrl+Click to edit all matching values"
@@ -765,7 +765,7 @@ export default function App() {
       {activeEditor && (
         <div 
           ref={editorRef}
-          className="fixed bg-[#252526] border border-[#454545] rounded-md shadow-2xl p-4 w-72 z-50 flex flex-col gap-4 font-sans"
+          className="fixed bg-[#252526] border border-[#454545] rounded-md shadow-2xl p-4 w-80 z-50 flex flex-col gap-4 font-sans"
           style={{ 
             top: `${Math.min(activeEditor.top, window.innerHeight - 350)}px`, 
             left: `${activeEditor.left}px` 
